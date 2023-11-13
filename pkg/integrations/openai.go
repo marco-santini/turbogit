@@ -14,6 +14,7 @@ type OpenAIProvider struct {
 }
 
 func NewOpenAIProvider(r *git.Repository) (*OpenAIProvider, error) {
+	var oc *openai.Client
 	c, err := r.Config()
 	if err != nil {
 		return nil, err
@@ -26,7 +27,18 @@ func NewOpenAIProvider(r *git.Repository) (*OpenAIProvider, error) {
 	if err != nil {
 		return nil, err
 	}
-	oc := openai.NewClient(token)
+
+	baseURL, err := c.LookupString("openai.base")
+	if err == nil {
+		engine, err := c.LookupString("openai.engine")
+		if err != nil {
+			return nil, err
+		}
+		oc = openai.NewClientWithConfig(openai.DefaultAzureConfig(token, baseURL, engine))
+
+	} else {
+		oc = openai.NewClient(token)
+	}
 
 	return &OpenAIProvider{client: oc}, nil
 }
